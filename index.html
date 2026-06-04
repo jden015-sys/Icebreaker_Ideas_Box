@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Icebreaker Activity Database</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #c8d8e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      color: #333;
+    }
+
+    /* === 90vw × 90vh APP SHELL === */
+    #appShell {
+      width: 90vw;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      background: #f4f6f8;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      /* fluid font: scales from 11px at 600px wide to 16px at 1400px wide */
+      font-size: clamp(11px, 0.9vw + 0.4vh, 16px);
+    }
+
+    /* === TOP NAV === */
+    .top-nav {
+      background: #1f4e79;
+      color: white;
+      padding: 0 1.25em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 3.5em;
+      flex-shrink: 0;
+      z-index: 200;
+    }
+
+    .top-nav h1 { font-size: 1.05em; font-weight: 500; }
+
+    .tab-bar { display: flex; gap: 0.4em; }
+
+    .tab-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 0.4em 1.1em;
+      border-radius: 20px;
+      font-size: 0.85em;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .tab-btn.active,
+    .tab-btn:hover { background: rgba(255,255,255,0.25); }
+
+    /* === PANELS === */
+    .panel { display: none; flex: 1; overflow-y: auto; min-height: 0; flex-direction: column; }
+    .panel.visible { display: flex; }
+
+    /* ===== WELCOME PANEL ===== */
+    .welcome-wrap {
+      max-width: 50em;
+      margin: 0 auto;
+      padding: 1.8em 1.25em;
+    }
+
+    .welcome-title {
+      font-size: 1.5em;
+      font-weight: 500;
+      color: #1f4e79;
+      margin-bottom: 0.35em;
+    }
+
+    .welcome-sub {
+      color: #666;
+      font-size: 0.92em;
+      margin-bottom: 1.4em;
+    }
+
+    .intro-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      margin-bottom: 0.75em;
+      overflow: hidden;
+      background: white;
+      cursor: pointer;
+    }
+    .intro-card:hover .intro-card-hdr { background: #edf2f7; }
+
+    .intro-card-hdr {
+      background: #f8fafc;
+      padding: 0.85em 1.25em;
+      font-size: 0.95em;
+      font-weight: 500;
+      color: #1f4e79;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .intro-card-hdr .arrow { font-size: 0.75em; color: #a0aec0; }
+
+    /* ===== DATABASE PANEL ===== */
+    #panelDB { display: none; flex-direction: column; min-height: 0; }
+    #panelDB.visible { display: flex; }
+
+    .filters {
+      background: white;
+      padding: 0.85em 1.25em;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6em;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    /* db-scroll fills remaining height; results grid + load-more live inside */
+    .db-scroll {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filters input,
+    .filters select {
+      padding: 0.5em 0.75em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 0.85em;
+      background: white;
+      color: #333;
+    }
+
+    .filters input  { flex: 1 1 11em; min-width: 10em; }
+    .filters select { flex: 1 1 8em;  min-width: 7.5em; }
+
+    .btn-random {
+      background: #1f4e79;
+      color: white;
+      border: none;
+      padding: 0.5em 1em;
+      border-radius: 8px;
+      font-size: 0.85em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-random:hover { opacity: 0.88; }
+
+    .count-bar {
+      padding: 0.6em 1.25em;
+      font-size: 0.82em;
+      color: #666;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    /* results grid grows to fill; load-more stays within normal flow */
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 18em), 1fr));
+      gap: 1.1em;
+      padding: 0 1.25em 1.25em;
+      align-content: start;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 1.1em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.11);
+    }
+    .card h3 {
+      font-size: 0.97em;
+      color: #1f4e79;
+      margin-bottom: 0.4em;
+      font-weight: 500;
+    }
+    .card-desc {
+      font-size: 0.83em;
+      color: #555;
+      line-height: 1.5;
+      margin-bottom: 0.6em;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 0.3em; margin-bottom: 0.6em; }
+    .chip {
+      background: #e7f0ff;
+      color: #1f4e79;
+      padding: 0.25em 0.6em;
+      border-radius: 20px;
+      font-size: 0.76em;
+    }
+    .card-meta { font-size: 0.78em; color: #666; line-height: 1.6; }
+
+    .empty {
+      grid-column: 1 / -1;
+      padding: 2.5em;
+      text-align: center;
+      color: #888;
+      font-size: 0.92em;
+    }
+
+    /* load-more spans full grid width, always visible in scroll flow */
+    .load-more-wrap {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 1.25em;
+    }
+
+    .load-more-btn {
+      background: white;
+      border: 1px solid #ccc;
+      color: #333;
+      padding: 0.6em 1.5em;
+      border-radius: 8px;
+      font-size: 0.88em;
+      cursor: pointer;
+    }
+    .load-more-btn:hover { background: #f0f0f0; }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .modal-container {
+      background: white;
+      width: 90vw;
+      max-width: 60em;
+      /* height is auto so it fits closed accordions exactly;
+         max-height kicks in once an accordion is opened */
+      height: auto;
+      max-height: 92vh;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      transform: translateY(-16px);
+      transition: transform 0.2s;
+      font-size: clamp(11px, 0.9vw + 0.4vh, 16px);
+    }
+    .modal-overlay.active .modal-container { transform: translateY(0); }
+
+    .modal-header {
+      padding: 1.1em 1.25em;
+      background: #1f4e79;
+      color: white;
+      border-radius: 16px 16px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .modal-header h2 { font-size: 1.05em; font-weight: 500; }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 1.7em;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-scroll-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      position: relative;
+    }
+
+    .modal-body {
+      padding: 1.4em;
+      flex: 1;
+      min-height: 0;
+      overflow-y: scroll;
+      line-height: 1.6;
+      font-size: 0.88em;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .modal-body::-webkit-scrollbar { display: none; }
+
+    .custom-scrollbar-track {
+      width: 10px;
+      background: #e2e8f0;
+      border-radius: 0 0 16px 0;
+      position: relative;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .custom-scrollbar-thumb {
+      width: 10px;
+      background: #1f4e79;
+      border-radius: 5px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      min-height: 40px;
+      cursor: grab;
+      transition: background 0.15s;
+    }
+    .custom-scrollbar-thumb:hover,
+    .custom-scrollbar-thumb.dragging { background: #163a5f; cursor: grabbing; }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6em;
+      background: #f8fafc;
+      padding: 0.85em;
+      border-radius: 10px;
+      margin-bottom: 1em;
+      border: 1px solid #e2e8f0;
+      font-size: 0.83em;
+      color: #4a5568;
+    }
+
+    /* Accordions — always rendered, closed by default */
+    .acc-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 0.5em;
+      overflow: hidden;
+    }
+    .acc-hdr {
+      background: #f8fafc;
+      padding: 0.75em 1.1em;
+      font-size: 0.92em;
+      font-weight: 500;
+      color: #1f4e79;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .acc-hdr:hover { background: #edf2f7; }
+    .acc-hdr::after {
+      content: '▼';
+      font-size: 0.68em;
+      color: #a0aec0;
+      transition: transform 0.2s;
+    }
+    .acc-section.open .acc-hdr::after { transform: rotate(180deg); }
+    .acc-body {
+      display: none;
+      padding: 0.85em 1.1em;
+      border-top: 1px solid #e2e8f0;
+      color: #4a5568;
+      font-size: 0.86em;
+    }
+    .acc-section.open .acc-body { display: block; }
+
+    .acc-section.watchout { border-left: 4px solid #e53e3e; }
+    .acc-section.watchout .acc-hdr { color: #c53030; }
+
+    /* === RESPONSIVE BREAKPOINTS === */
+    @media (max-width: 600px) {
+      #appShell { width: 100vw; height: 100vh; border-radius: 0; }
+      .modal-container { width: 100vw; max-height: 100vh; border-radius: 0; }
+      .modal-grid { grid-template-columns: 1fr; }
+      .filters input, .filters select { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="appShell">
+
+  <!-- TOP NAV -->
+  <nav class="top-nav">
+    <h1>🧊 Icebreaker Activity Database</h1>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabWelcome">ℹ️ About</button>
+      <button class="tab-btn" id="tabDB">🗂️ Database</button>
+    </div>
+  </nav>
+
+  <!-- WELCOME PANEL -->
+  <div class="panel visible" id="panelWelcome">
+    <div class="welcome-wrap">
+      <div class="welcome-title">Welcome to the Icebreaker Activity Database</div>
+      <div class="welcome-sub">Search and filter learning activities for your teaching context. Switch to the Database tab to get started.</div>
+
+      <div class="intro-card" data-modal="research">
+        <div class="intro-card-hdr">Why icebreakers matter: The research <span class="arrow">›</span></div>
+      </div>
+
+      <div class="intro-card" data-modal="howto">
+        <div class="intro-card-hdr">How to use this database <span class="arrow">›</span></div>
+      </div>
+
+      <div class="intro-card" data-modal="disclaimer">
+        <div class="intro-card-hdr">Important disclaimer <span class="arrow">›</span></div>
+      </div>
+
+      <div class="intro-card" data-modal="not_to_use">
+        <div class="intro-card-hdr">When NOT to use icebreakers <span class="arrow">›</span></div>
+      </div>
+
+      <div class="intro-card" data-modal="context_modes">
+        <div class="intro-card-hdr">Choose your teaching context mode <span class="arrow">›</span></div>
+      </div>
+      <div class="intro-card" data-modal="about_author">
+        <div class="intro-card-hdr">About the author <span class="arrow">›</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATABASE PANEL -->
+  <div class="panel" id="panelDB">
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="Search activities…" />
+      <select id="disciplineFilter"><option value="">All Disciplines</option></select>
+      <select id="modalityFilter"><option value="">All Modalities</option></select>
+      <select id="energyFilter"><option value="">All Energy Levels</option></select>
+      <select id="psychologicalriskFilter"><option value="">All Risk Levels</option></select>
+      <select id="movementFilter"><option value="">All Movement</option></select>
+      <select id="noiseFilter"><option value="">All Noise</option></select>
+      <select id="durationFilter">
+        <option value="">Any Duration</option>
+        <option value="5">Up to 5 mins</option>
+        <option value="10">Up to 10 mins</option>
+        <option value="20">Up to 20 mins</option>
+        <option value="30">Up to 30 mins</option>
+        <option value="60">Up to 60 mins</option>
+      </select>
+      <button class="btn-random" id="randomButton">🎲 Random Activity</button>
+    </div>
+
+    <div class="db-scroll">
+      <div class="count-bar" id="count"></div>
+      <div class="results" id="results"></div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY DETAIL MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2 id="modalTitle">Activity Details</h2>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-scroll-wrap" id="modalScrollWrap">
+        <div class="modal-body" id="modalBody"></div>
+        <div class="custom-scrollbar-track" id="scrollTrack">
+          <div class="custom-scrollbar-thumb" id="scrollThumb"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PAGE_SIZE = 6;
+    let activities = [], filtered = [], shown = 0;
+
+    // Data loaded from activities.json
+
+    async function loadActivities() {
+      try {
+        const response = await fetch('activities.json');
+        if (!response.ok) throw new Error('Failed to load');
+        const raw = await response.json();
+        activities = raw.map(item => ({
+          name:            item["Activity Name"] || "Unnamed Activity",
+          id:              item["Activity ID"] || "",
+          discipline:      item["Disciplinary Context"] || "General",
+          duration:        parseInt(item["Duration"], 10) || 0,
+          maxGroup:        item["Maximum Group Size"] || "",
+          modality:        item["Modality"] || "",
+          energy:          item["Energy Level"] || "",
+          risk:            item["Psychological Risk"] || "",
+          movement:        item["Movement Required"] || "",
+          noise:           item["Noise Level"] || "",
+          materials:       item["Materials Required"] || "",
+          materialsCat:    item["Materials Required (categorised)"] || "",
+          complexity:      item["Facilitation Complexity"] || "",
+          bestUsed:        item["Best Used When"] || "",
+          debriefRec:      item["Debrief Recommended?"] || "",
+          safetyFlags:     item["Inclusion and Safety Flags"] || "",
+          pedagogy:        item["Pedagogical Approach"] || "",
+          instructions:    item["Student Instructions"] || "",
+          setup:           item["Setup Instructions"] || "",
+          facInstructions: item["Facilitator Instructions"] || "",
+          debriefQuestions:item["Debrief Questions"] || "",
+          variations:      item["Variations"] || "",
+          watchouts:       item["Facilitator Watch-Outs"] || ""
+        }));
+        buildFilters();
+        applyFilters();
+      } catch(e) {
+        document.getElementById('results').innerHTML =
+          '<div class="empty">Unable to load activities data.</div>';
+      }
+    }
+
+    // === BUILD FILTER DROPDOWNS ===
+    function buildFilters() {
+      const sets = {
+        disciplineFilter: new Set(),
+        modalityFilter: new Set(),
+        energyFilter: new Set(),
+        psychologicalriskFilter: new Set(),
+        movementFilter: new Set(),
+        noiseFilter: new Set()
+      };
+      activities.forEach(a => {
+        if (a.discipline) sets.disciplineFilter.add(a.discipline);
+        if (a.modality) a.modality.split(';').forEach(m => sets.modalityFilter.add(m.trim()));
+        if (a.energy) sets.energyFilter.add(a.energy);
+        if (a.risk) sets.psychologicalriskFilter.add(a.risk);
+        if (a.movement) sets.movementFilter.add(a.movement);
+        if (a.noise) sets.noiseFilter.add(a.noise);
+      });
+      Object.entries(sets).forEach(([id, set]) => {
+        const sel = document.getElementById(id);
+        Array.from(set).sort().forEach(v => {
+          if (!v) return;
+          const o = document.createElement('option');
+          o.value = o.textContent = v;
+          sel.appendChild(o);
+        });
+      });
+    }
+
+    // === FILTER & RENDER ===
+    function applyFilters() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const disc   = document.getElementById('disciplineFilter').value;
+      const mod    = document.getElementById('modalityFilter').value;
+      const eng    = document.getElementById('energyFilter').value;
+      const risk   = document.getElementById('psychologicalriskFilter').value;
+      const mov    = document.getElementById('movementFilter').value;
+      const noise  = document.getElementById('noiseFilter').value;
+      const dur    = document.getElementById('durationFilter').value;
+
+      filtered = activities.filter(a =>
+        (!search || a.name.toLowerCase().includes(search) ||
+                    a.discipline.toLowerCase().includes(search) ||
+                    a.instructions.toLowerCase().includes(search))
+        && (!disc  || a.discipline === disc)
+        && (!mod   || a.modality.includes(mod))
+        && (!eng   || a.energy === eng)
+        && (!risk  || a.risk === risk)
+        && (!mov   || a.movement === mov)
+        && (!noise || a.noise === noise)
+        && (!dur   || a.duration <= parseInt(dur))
+      );
+
+      shown = 0;
+      document.getElementById('results').innerHTML = '';
+      renderPage();
+    }
+
+    function renderPage() {
+      const grid = document.getElementById('results');
+
+      // Remove old load-more button if present
+      const oldBtn = document.getElementById('loadMoreWrap');
+      if (oldBtn) oldBtn.remove();
+
+      const page = filtered.slice(shown, shown + PAGE_SIZE);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty">No matching icebreakers found. Try adjusting the filters.</div>';
+        document.getElementById('count').textContent = 'No activities found';
+        return;
+      }
+
+      page.forEach(act => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.addEventListener('click', () => openModal(act));
+        const desc = act.pedagogy ? act.pedagogy.split('|')[0].trim() : 'No pedagogical approach provided.';
+        card.innerHTML = `
+          <h3>${act.name}</h3>
+          <div class="card-desc">${desc}</div>
+          <div class="card-tags">
+            <span class="chip">${act.discipline}</span>
+            <span class="chip">⏱ ${act.duration} mins</span>
+          </div>
+          <div class="card-meta">
+            <strong>Modality:</strong> ${act.modality}<br>
+            <strong>Risk Profile:</strong> ${act.risk}<br>
+            <strong>Energy Level:</strong> ${act.energy}
+          </div>`;
+        grid.appendChild(card);
+      });
+
+      shown += page.length;
+      document.getElementById('count').textContent = `Showing ${shown} of ${filtered.length} activities`;
+
+      if (shown < filtered.length) {
+        const wrap = document.createElement('div');
+        wrap.className = 'load-more-wrap';
+        wrap.id = 'loadMoreWrap';
+        wrap.innerHTML = `<button class="load-more-btn" id="loadMoreBtn">Load more activities (${filtered.length - shown} remaining)</button>`;
+        wrap.querySelector('#loadMoreBtn').addEventListener('click', renderPage);
+        grid.appendChild(wrap);
+      }
+    }
+
+    // === MODAL ===
+    function openModal(act) {
+      document.getElementById('modalTitle').textContent = act.name;
+      const body = document.getElementById('modalBody');
+      body.innerHTML = '';
+
+      const grid = document.createElement('div');
+      grid.className = 'modal-grid';
+      grid.innerHTML = `
+        <div><strong>Discipline:</strong> ${act.discipline}</div>
+        <div><strong>Duration:</strong> ${act.duration} mins</div>
+        <div><strong>Modality:</strong> ${act.modality}</div>
+        <div><strong>Max Group Size:</strong> ${act.maxGroup}</div>
+        <div><strong>Energy Level:</strong> ${act.energy}</div>
+        <div><strong>Psychological Risk:</strong> ${act.risk}</div>
+        <div><strong>Movement Required:</strong> ${act.movement}</div>
+        <div><strong>Noise Level:</strong> ${act.noise}</div>
+        <div><strong>Complexity:</strong> ${act.complexity}</div>
+        <div><strong>Materials:</strong> ${act.materialsCat}</div>`;
+      body.appendChild(grid);
+
+      function addAccordion(title, raw, extraClass = '') {
+        // Silent skip — no content, no accordion
+        if (!raw || raw.trim() === '' || raw.trim() === 'None') return;
+        const sec = document.createElement('div');
+        sec.className = ('acc-section ' + extraClass).trim();
+        const hdr = document.createElement('div');
+        hdr.className = 'acc-hdr';
+        hdr.textContent = title;
+        hdr.addEventListener('click', () => {
+          const wasOpen = sec.classList.contains('open');
+          sec.classList.toggle('open');
+          // If we just opened it, scroll so the bottom of this accordion
+          // aligns with the bottom of the modal body
+          if (!wasOpen) {
+            requestAnimationFrame(() => {
+              const bodyEl = document.getElementById('modalBody');
+              const secBottom = sec.offsetTop + sec.offsetHeight;
+              // Position the bottom of the open accordion 3/4 down the modal body,
+              // leaving ~1/4 of visible space below it so content above & below is clear
+              const targetScroll = secBottom - (bodyEl.clientHeight * 0.75);
+              bodyEl.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+            });
+          }
+        });
+        const bod = document.createElement('div');
+        bod.className = 'acc-body';
+        if (raw.includes('|')) {
+          const ol = document.createElement('ol');
+          ol.style.paddingLeft = '18px';
+          raw.split('|').map(s => s.trim().replace(/^\d+\.\s*/, '')).forEach(t => {
+            const li = document.createElement('li');
+            li.textContent = t;
+            li.style.marginBottom = '4px';
+            ol.appendChild(li);
+          });
+          bod.appendChild(ol);
+        } else {
+          bod.innerHTML = raw.replace(/\n/g, '<br>');
+        }
+        sec.appendChild(hdr);
+        sec.appendChild(bod);
+        body.appendChild(sec);
+      }
+
+      addAccordion('Pedagogical Approach',     act.pedagogy);
+      addAccordion('Student Instructions',     act.instructions);
+      addAccordion('Setup Instructions',       act.setup);
+      addAccordion('Facilitator Instructions', act.facInstructions);
+      addAccordion('Debrief Questions',        act.debriefQuestions);
+      addAccordion('Variations',               act.variations);
+      addAccordion('Facilitator Watch-Outs',   act.watchouts, 'watchout');
+
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    // === TAB SWITCHING ===
+    document.getElementById('tabWelcome').addEventListener('click', () => {
+      document.getElementById('panelWelcome').classList.add('visible');
+      document.getElementById('panelDB').classList.remove('visible');
+      document.getElementById('tabWelcome').classList.add('active');
+      document.getElementById('tabDB').classList.remove('active');
+    });
+
+    document.getElementById('tabDB').addEventListener('click', () => {
+      document.getElementById('panelDB').classList.add('visible');
+      document.getElementById('panelWelcome').classList.remove('visible');
+      document.getElementById('tabDB').classList.add('active');
+      document.getElementById('tabWelcome').classList.remove('active');
+      if (activities.length === 0) loadActivities();
+    });
+
+    // === WELCOME PANEL MODALS ===
+    const welcomePanels = {
+      research: {
+        title: "Why icebreakers matter: The research",
+        body: `<p>Icebreakers shape the conditions under which learning begins.</p>
+          <p>Psychological safety (Edmondson, 1999) increases participation and risk-taking.</p>
+          <p>Anxiety reduces working memory capacity (Eysenck et al., 2007).</p>
+          <p>Belonging interventions improve persistence (Walton &amp; Cohen, 2007).</p>`
+      },
+      howto: {
+        title: "How to use this database",
+        body: `<p>This is a design toolkit, not a script library.</p>
+          <p>Use filters to match context, then adapt freely.</p>
+          <p>Click the <strong>Database</strong> tab above to start browsing activities.</p>`
+      },
+      disclaimer: {
+        title: "Important disclaimer",
+        body: `<p>This resource is AI-assisted. Use professional judgement in all contexts.</p>`
+      },
+      not_to_use: {
+        title: "When NOT to use icebreakers",
+        body: `<p>Avoid icebreakers in high-stress, high-load, or emotionally sensitive contexts.</p>
+          <p>Do not use when psychological safety is not yet established if activities require disclosure or interaction.</p>
+          <p>In safety-critical or highly procedural environments, task focus may be more appropriate.</p>
+          <p>The key question is fit: does this activity match the emotional and cognitive state of the group?</p>`
+      },
+      context_modes: {
+        title: "Choose your teaching context mode",
+        body: `<p><strong>Low-trust group:</strong> use structured, low-disclosure activities.</p>
+          <p><strong>Established group:</strong> more dialogue and interaction is appropriate.</p>
+          <p><strong>Large lecture:</strong> prefer scalable formats (chat, polling, paired responses).</p>
+          <p><strong>Online/hybrid:</strong> use clear structured input formats.</p>
+          <p><strong>High-energy sessions:</strong> movement or rapid-response formats may help engagement.</p>
+          <p>These are heuristics, not rules. Adapt to context.</p>`
+      }
+    };
+
+    function openWelcomeModal(key) {
+      const panel = welcomePanels[key];
+      if (!panel) return;
+      document.getElementById('modalTitle').textContent = panel.title;
+      const body = document.getElementById('modalBody');
+      body.innerHTML = '<div style="font-size:0.95rem;line-height:1.7;color:#4a5568">' + panel.body + '</div>';
+      body.querySelectorAll('p').forEach(p => { p.style.marginBottom = '10px'; });
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    document.querySelectorAll('.intro-card[data-modal]').forEach(card => {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', function(e) {
+        openWelcomeModal(card.dataset.modal);
+,
+      about_author: {
+        title: "About the author",
+        body: `<p>This database was compiled and created by <strong>Jamie Denton</strong> (2026).</p>
+          <p>Jamie Denton is a researcher and educator at the University of Auckland. Links to academic profiles below.</p>
+          <p style="margin-top:1em; display:flex; flex-direction:column; gap:0.5em;">
+            <a href="https://auckland.academia.edu/JamieDenton" target="_blank" rel="noopener" style="color:#1f4e79;">🎓 Academia.edu</a>
+            <a href="https://www.researchgate.net/profile/Jamie-Denton-3" target="_blank" rel="noopener" style="color:#1f4e79;">🔬 ResearchGate</a>
+            <a href="https://profiles.auckland.ac.nz/j-denton" target="_blank" rel="noopener" style="color:#1f4e79;">🏫 University of Auckland Profile</a>
+            <a href="https://scholar.google.com/citations?hl=en&user=ZjBxV4cAAAAJ" target="_blank" rel="noopener" style="color:#1f4e79;">📚 Google Scholar</a>
+          </p>`
+      }
+      });
+    });
+
+    // === FILTER LISTENERS ===
+    ['searchInput','disciplineFilter','modalityFilter','energyFilter',
+     'psychologicalriskFilter','movementFilter','noiseFilter','durationFilter']
+      .forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
+
+    // === RANDOM ===
+    document.getElementById('randomButton').addEventListener('click', () => {
+      if (activities.length) openModal(activities[Math.floor(Math.random() * activities.length)]);
+    });
+
+    // === MODAL CLOSE ===
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('modalOverlay').addEventListener('click', e => {
+      if (e.target.id === 'modalOverlay') closeModal();
+    });
+
+    // === CUSTOM SCROLLBAR ===
+    const modalBody  = document.getElementById('modalBody');
+    const scrollTrack = document.getElementById('scrollTrack');
+    const scrollThumb = document.getElementById('scrollThumb');
+
+    function updateThumb() {
+      const { scrollTop, scrollHeight, clientHeight } = modalBody;
+      const trackH = scrollTrack.clientHeight;
+      const thumbH = Math.max(40, (clientHeight / scrollHeight) * trackH);
+      const thumbTop = (scrollTop / (scrollHeight - clientHeight)) * (trackH - thumbH);
+      scrollThumb.style.height = thumbH + 'px';
+      scrollThumb.style.top = thumbTop + 'px';
+    }
+
+    modalBody.addEventListener('scroll', updateThumb);
+
+    // Update thumb whenever modal opens (content changes)
+    const origOpenModal = openModal;
+    openModal = function(act) { origOpenModal(act); requestAnimationFrame(updateThumb); };
+    const origOpenWelcomeModal = openWelcomeModal;
+    openWelcomeModal = function(key) { origOpenWelcomeModal(key); requestAnimationFrame(updateThumb); };
+
+    // Click on track to jump
+    scrollTrack.addEventListener('click', e => {
+      if (e.target === scrollThumb) return;
+      const rect = scrollTrack.getBoundingClientRect();
+      const ratio = (e.clientY - rect.top) / rect.height;
+      modalBody.scrollTop = ratio * (modalBody.scrollHeight - modalBody.clientHeight);
+    });
+
+    // Drag thumb
+    let isDragging = false, dragStartY = 0, dragStartScroll = 0;
+    scrollThumb.addEventListener('mousedown', e => {
+      isDragging = true;
+      dragStartY = e.clientY;
+      dragStartScroll = modalBody.scrollTop;
+      scrollThumb.classList.add('dragging');
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      const trackH = scrollTrack.clientHeight;
+      const thumbH = scrollThumb.clientHeight;
+      const delta = e.clientY - dragStartY;
+      const scrollRange = modalBody.scrollHeight - modalBody.clientHeight;
+      modalBody.scrollTop = dragStartScroll + delta * (scrollRange / (trackH - thumbH));
+    });
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      scrollThumb.classList.remove('dragging');
+    });
+  </script>
+  </div><!-- #appShell -->
+</body>
+</html>
