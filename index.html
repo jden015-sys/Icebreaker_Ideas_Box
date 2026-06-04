@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Icebreaker Activity Database</title>
+  <title>Icebreaker Activity Ideas Box</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -114,7 +114,7 @@
 
     .intro-card-hdr .arrow { font-size: 0.75em; color: #a0aec0; }
 
-    /* ===== DATABASE PANEL ===== */
+    /* ===== IDEAS BOX PANEL ===== */
     #panelDB { display: none; flex-direction: column; min-height: 0; }
     #panelDB.visible { display: flex; }
 
@@ -408,25 +408,25 @@
 
   <!-- TOP NAV -->
   <nav class="top-nav">
-    <h1>🧊 Icebreaker Activity Database</h1>
+    <h1>💡 Icebreaker Activity Ideas Box</h1>
     <div class="tab-bar">
       <button class="tab-btn active" id="tabWelcome">ℹ️ About</button>
-      <button class="tab-btn" id="tabDB">🗂️ Database</button>
+      <button class="tab-btn" id="tabDB">💡Ideas Box</button>
     </div>
   </nav>
 
   <!-- WELCOME PANEL -->
   <div class="panel visible" id="panelWelcome">
     <div class="welcome-wrap">
-      <div class="welcome-title">Welcome to the Icebreaker Activity Database</div>
-      <div class="welcome-sub">Search and filter learning activities for your teaching context. Switch to the Database tab to get started.</div>
+      <div class="welcome-title">Welcome to the Icebreaker Activity Ideas Box</div>
+      <div class="welcome-sub">Search and filter learning activities for your teaching context. Switch to the Ideas Box tab to get started.</div>
 
       <div class="intro-card" data-modal="research">
         <div class="intro-card-hdr">Why icebreakers matter: The research <span class="arrow">›</span></div>
       </div>
 
       <div class="intro-card" data-modal="howto">
-        <div class="intro-card-hdr">How to use this database <span class="arrow">›</span></div>
+        <div class="intro-card-hdr">How to use this ideas box <span class="arrow">›</span></div>
       </div>
 
       <div class="intro-card" data-modal="disclaimer">
@@ -446,7 +446,7 @@
     </div>
   </div>
 
-  <!-- DATABASE PANEL -->
+  <!-- IDEAS BOX PANEL -->
   <div class="panel" id="panelDB">
     <div class="filters">
       <input type="text" id="searchInput" placeholder="Search activities…" />
@@ -749,12 +749,12 @@
           Walton, G. M., &amp; Cohen, G. L. (2007). A question of belonging: Race, social fit, and achievement. <em>Journal of Personality and Social Psychology, 92</em>(1), 82–96.</p>`
       },
       howto: {
-        title: "How to use this database",
+        title: "How to use this ideas box",
         body: `<p>Each activity card shows the name, discipline, energy level, duration and psychological risk level. Click any card to open the full activity with student instructions, facilitator notes, debrief questions and variations.</p>
-          <p>Use the filter bar at the top of the Database view to narrow activities by discipline, modality, energy level, risk level, movement, noise, and duration. The <strong>🎲 Random Activity</strong> button picks one at random from the full set — useful when you want a prompt rather than a search.</p>
+          <p>Use the filter bar at the top of the Ideas Box view to narrow activities by discipline, modality, energy level, risk level, movement, noise, and duration. The <strong>🎲 Random Activity</strong> button picks one at random from the full set — useful when you want a prompt rather than a search.</p>
           <p>Activities are coded by discipline — <strong>General</strong> activities work across any context. Discipline-specific sets (Business, Law, Health Sciences, Humanities &amp; Social Sciences, and others) contain subject references and scenarios tailored to that field.</p>
           <p>This is a design toolkit, not a script library. Use the filters to find a starting point, then adapt the activity freely to your group, context and learning goals.</p>
-          <p>Click the <strong>Database</strong> tab above to start browsing activities.</p>`
+          <p>Click the <strong>Ideas Box</strong> tab above to start browsing activities.</p>`
       },
       disclaimer: {
         title: "Important disclaimer",
@@ -778,7 +778,7 @@
       },
       about_author: {
         title: "About the author",
-        body: `<p>This database was compiled and created by <strong>Jamie Denton</strong> (2026).</p>
+        body: `<p>This Ideas Box was compiled and created by <strong>Jamie Denton</strong> (2026).</p>
           <p>Jamie Denton is a researcher and educator at the University of Auckland. Links to academic profiles below.</p>
           <p style="margin-top:1em; display:flex; flex-direction:column; gap:0.5em;">
             <a href="https://auckland.academia.edu/JamieDenton" target="_blank" rel="noopener" style="color:#1f4e79;">🎓 Academia.edu</a>
